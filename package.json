@@ -1,0 +1,47 @@
+{
+  "name": "mcp-audit",
+  "version": "0.1.0",
+  "description": "Zero-overhead security proxy and audit firewall for Model Context Protocol (MCP) servers",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "mcp-audit": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node dist/cli.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "security",
+    "audit",
+    "firewall",
+    "guardrails",
+    "llm",
+    "proxy",
+    "claude",
+    "cursor"
+  ],
+  "author": "mcp-audit contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mcp-audit/mcp-audit"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "type": "module"
+}
