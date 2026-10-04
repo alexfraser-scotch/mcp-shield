@@ -1,29 +1,33 @@
 # mcp-shield 🛡️
 
-[![CI](https://github.com/alexfraser-scotch/mcp-shield/actions/workflows/ci.yml/badge.svg)](https://github.com/alexfraser-scotch/mcp-shield/actions)
 [![npm version](https://img.shields.io/npm/v/mcp-shield.svg)](https://www.npmjs.com/package/mcp-shield)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 > **Zero-overhead runtime security proxy, reversible secret vault, and audit firewall for [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers.**
 
-When AI assistants (Claude Desktop, Cursor, Zed, or agent frameworks) connect to local MCP servers, they often receive unrestricted access to system files, shell commands, and databases. 
+When AI assistants (**Cursor**, **Claude Desktop**, **Windsurf**, or agent frameworks) connect to local MCP servers, they often receive unrestricted access to system files, shell commands, and databases. 
 
 Unlike offline scanners that only check configuration files once, **`mcp-shield`** runs in real time between your AI client and any target MCP server. It intercepts destructive tool calls, prevents sensitive file exfiltration, and redacts credentials before they can leak into external LLM prompts.
 
 ---
 
-## ⚡ 1-Click Protection (No Config Editing Required)
+## ⚡ 1-Click Protection (Universal Client Support)
 
-Wrap all your existing Claude Desktop MCP servers with a single command:
+Shield your MCP servers across all installed AI editors with a single command:
 
 ```bash
-# Auto-detects and shields all servers in claude_desktop_config.json
+# Auto-detects and protects Claude Desktop, Cursor, and Windsurf
+npx mcp-shield wrap all
+
+# Or target a specific editor:
+npx mcp-shield wrap cursor
 npx mcp-shield wrap claude
+npx mcp-shield wrap windsurf
 ```
 
 To revert back at any time:
 ```bash
-npx mcp-shield unwrap claude
+npx mcp-shield unwrap all
 ```
 
 ---
@@ -33,8 +37,8 @@ npx mcp-shield unwrap claude
 | Capability | Static Config Scanners | Standard Proxies | `mcp-shield` 🛡️ |
 | :--- | :---: | :---: | :---: |
 | **Real-time Runtime Blocking** | ❌ | ✅ | ✅ |
-| **1-Click Auto-Wrap CLI** | ❌ | ❌ | ✅ (`mcp-shield wrap`) |
-| **Reversible Secret Vault** | ❌ | ❌ (hard redacts, breaking APIs) | ✅ (masks outbound, re-hydrates inbound) |
+| **Universal 1-Click Auto-Wrap** | ❌ | ❌ | ✅ (Cursor, Claude, Windsurf) |
+| **Reversible Secret Vault** | ❌ | ❌ (hard redacts, breaks APIs) | ✅ (masks outbound, re-hydrates inbound) |
 | **Destructive Command Guard** | ❌ | Partial | ✅ (`rm -rf`, `DROP TABLE`, `mkfs`) |
 | **Sensitive Path Shield** | ❌ | Partial | ✅ (`.env`, `id_rsa`, `~/.aws`) |
 | **Zero-Corrupt Terminal HUD** | ❌ | ❌ | ✅ (Live latency & status to stderr) |
@@ -69,7 +73,7 @@ npx mcp-shield --log /tmp/audit.jsonl -- npx -y @modelcontextprotocol/server-fil
 Usage: mcp-shield [options] [command] [args...]
 
 Subcommands:
-  wrap [target]                Inject mcp-shield into Claude Desktop configuration
+  wrap [target]                Inject mcp-shield into AI clients: 'cursor', 'claude', 'windsurf', or 'all' (default: all)
   unwrap [target]              Restore original configuration
 
 Arguments:

@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { SecurityEngine } from "./rules/engine.js";
 import { AuditLogger } from "./logger.js";
 import { StdioProxy } from "./proxy.js";
-import { wrapClaudeConfig, unwrapClaudeConfig } from "./utils/configWrapper.js";
+import { wrapConfig, unwrapConfig, type ClientTarget } from "./utils/configWrapper.js";
 
 const program = new Command();
 
@@ -16,17 +16,17 @@ program
 // Subcommand: wrap
 program
   .command("wrap [target]")
-  .description("Automatically inject mcp-shield protection into Claude Desktop configuration")
-  .action((target) => {
-    wrapClaudeConfig();
+  .description("Automatically inject mcp-shield protection into Claude Desktop, Cursor, or Windsurf (default: all)")
+  .action((target = "all") => {
+    wrapConfig(target.toLowerCase() as ClientTarget);
   });
 
 // Subcommand: unwrap
 program
   .command("unwrap [target]")
-  .description("Restore original Claude Desktop configuration")
-  .action((target) => {
-    unwrapClaudeConfig();
+  .description("Restore original configuration for Claude Desktop, Cursor, or Windsurf (default: all)")
+  .action((target = "all") => {
+    unwrapConfig(target.toLowerCase() as ClientTarget);
   });
 
 // Default proxy execution
