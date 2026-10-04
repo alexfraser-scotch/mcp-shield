@@ -1,11 +1,11 @@
 {
-  "name": "mcp-audit",
+  "name": "mcp-shield",
   "version": "0.1.0",
-  "description": "Zero-overhead security proxy and audit firewall for Model Context Protocol (MCP) servers",
+  "description": "Zero-overhead runtime security proxy, secret vault, and audit firewall for Model Context Protocol (MCP) servers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "mcp-audit": "./dist/cli.js"
+    "mcp-shield": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -17,22 +17,21 @@
   },
   "keywords": [
     "mcp",
+    "mcp-shield",
     "model-context-protocol",
-    "ai",
-    "security",
-    "audit",
-    "firewall",
+    "ai-security",
     "guardrails",
-    "llm",
-    "proxy",
-    "claude",
+    "firewall",
+    "audit",
+    "secret-redaction",
+    "claude-desktop",
     "cursor"
   ],
-  "author": "mcp-audit contributors",
+  "author": "Alex Fraser and mcp-shield contributors",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mcp-audit/mcp-audit"
+    "url": "https://github.com/alexfraser-scotch/mcp-shield"
   },
   "dependencies": {
     "chalk": "^5.3.0",

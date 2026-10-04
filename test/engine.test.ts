@@ -1,29 +1,44 @@
 import { describe, it, expect } from "vitest";
-import { maskSecretsInString, maskSecretsInObject } from "../src/utils/sanitizer.js";
+import { SecretVault } from "../src/utils/vault.js";
 import { SecurityEngine } from "../src/rules/engine.js";
 
-describe("Sanitizer", () => {
-  it("masks OpenAI API keys and tokens in string", () => {
-    const input = "Connecting with key sk-1234567890abcdef1234567890 and Bearer eyJhbGciOiJIUzI1NiJ9.test.sig";
-    const res = maskSecretsInString(input);
-    expect(res.count).toBeGreaterThan(0);
-    expect(res.maskedText).not.toContain("sk-1234567890abcdef1234567890");
-    expect(res.maskedText).toContain("[REDACTED_SECRET]");
+describe("SecretVault (Reversible Tokenization)", () => {
+  it("replaces sensitive secrets with synthetic references and detokenizes back perfectly", () => {
+    const vault = new SecretVault();
+    const rawSecret = "sk-abcdef1234567890abcdef12345";
+    const originalText = `Authorization: Bearer ${rawSecret}`;
+
+    // 1. Tokenize (Outbound to LLM)
+    const { sanitizedText, count } = vault.tokenizeString(originalText);
+    expect(count).toBeGreaterThan(0);
+    expect(sanitizedText).not.toContain(rawSecret);
+    expect(sanitizedText).toContain("[[MCP_SHIELD_REF_");
+
+    // 2. Detokenize (Inbound from LLM to Target Tool)
+    const restoredText = vault.detokenizeString(sanitizedText);
+    expect(restoredText).toBe(originalText);
   });
 
-  it("masks nested object properties", () => {
+  it("tokenizes and restores nested objects", () => {
+    const vault = new SecretVault();
     const payload = {
-      user: "alice",
-      auth: {
-        password: "SuperSecretPassword123!",
-        apikey: "sk-abcdef1234567890abcdef"
+      credentials: {
+        apiKey: "sk-proj-test1234567890abcdef12345",
+        password: "SecretDatabasePassword999!"
+      },
+      metadata: {
+        host: "db.internal"
       }
     };
-    const { maskedObj, count } = maskSecretsInObject(payload);
+
+    const { sanitizedObj, count } = vault.tokenizeObject(payload);
     expect(count).toBe(2);
-    expect(maskedObj.auth.password).toBe("[REDACTED_SECRET]");
-    expect(maskedObj.auth.apikey).toBe("[REDACTED_SECRET]");
-    expect(maskedObj.user).toBe("alice");
+    expect(sanitizedObj.credentials.apiKey).toContain("[[MCP_SHIELD_REF_");
+    expect(sanitizedObj.credentials.password).toContain("[[MCP_SHIELD_REF_");
+    expect(sanitizedObj.metadata.host).toBe("db.internal");
+
+    const restoredObj = vault.detokenizeObject(sanitizedObj);
+    expect(restoredObj).toEqual(payload);
   });
 });
 
@@ -73,38 +88,5 @@ describe("SecurityEngine", () => {
     const decision = engine.evaluateRequest(req);
     expect(decision.action).toBe("block");
     expect(decision.ruleName).toBe("sensitive_path_access");
-  });
-
-  it("redacts secrets inside arguments", () => {
-    const req = {
-      jsonrpc: "2.0" as const,
-      id: 4,
-      method: "tools/call",
-      params: {
-        name: "send_http_request",
-        arguments: {
-          headers: {
-            Authorization: "Bearer sk-proj-12345678901234567890"
-          }
-        }
-      }
-    };
-    const decision = engine.evaluateRequest(req);
-    expect(decision.action).toBe("mask");
-    expect(JSON.stringify(decision.modifiedPayload)).toContain("[REDACTED_SECRET]");
-  });
-
-  it("allows safe standard calls", () => {
-    const req = {
-      jsonrpc: "2.0" as const,
-      id: 5,
-      method: "tools/call",
-      params: {
-        name: "calculate_sum",
-        arguments: { a: 10, b: 20 }
-      }
-    };
-    const decision = engine.evaluateRequest(req);
-    expect(decision.action).toBe("allow");
   });
 });

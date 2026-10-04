@@ -1,77 +1,85 @@
-# mcp-audit 🛡️
+# mcp-shield 🛡️
 
-[![CI](https://github.com/mcp-audit/mcp-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/mcp-audit/mcp-audit/actions)
-[![npm version](https://img.shields.io/npm/v/mcp-audit.svg)](https://www.npmjs.com/package/mcp-audit)
+[![CI](https://github.com/alexfraser-scotch/mcp-shield/actions/workflows/ci.yml/badge.svg)](https://github.com/alexfraser-scotch/mcp-shield/actions)
+[![npm version](https://img.shields.io/npm/v/mcp-shield.svg)](https://www.npmjs.com/package/mcp-shield)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-> **Zero-overhead security proxy, credential redactor, and audit firewall for [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers.**
+> **Zero-overhead runtime security proxy, reversible secret vault, and audit firewall for [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers.**
 
-When AI assistants (Claude Desktop, Cursor, Zed, or agent frameworks) connect to local MCP servers, they often receive unrestricted access to system files, shell commands, and production databases. 
+When AI assistants (Claude Desktop, Cursor, Zed, or agent frameworks) connect to local MCP servers, they often receive unrestricted access to system files, shell commands, and databases. 
 
-**`mcp-audit`** acts as an intermediary stdio proxy between your AI client and any target MCP server. It inspects tool calls, blocks dangerous operations, masks exposed credentials, and logs an immutable audit trail.
+Unlike offline scanners that only check configuration files once, **`mcp-shield`** runs in real time between your AI client and any target MCP server. It intercepts destructive tool calls, prevents sensitive file exfiltration, and redacts credentials before they can leak into external LLM prompts.
 
 ---
 
-## ⚡ Quickstart
+## ⚡ 1-Click Protection (No Config Editing Required)
 
-No configuration required. Prefix your existing MCP server command with `mcp-audit`:
+Wrap all your existing Claude Desktop MCP servers with a single command:
 
 ```bash
-# Direct execution via npx
-npx mcp-audit -- npx -y @modelcontextprotocol/server-postgres "postgresql://localhost/mydb"
+# Auto-detects and shields all servers in claude_desktop_config.json
+npx mcp-shield wrap claude
 ```
 
-### In Claude Desktop (`claude_desktop_config.json`)
-
-Wrap your existing MCP command with `mcp-audit`:
-
-```json
-{
-  "mcpServers": {
-    "postgres-secure": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-audit",
-        "--log",
-        "/tmp/mcp-audit.jsonl",
-        "--",
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-postgres",
-        "postgresql://localhost/mydb"
-      ]
-    }
-  }
-}
+To revert back at any time:
+```bash
+npx mcp-shield unwrap claude
 ```
 
 ---
 
-## 🚀 Key Features
+## 🚀 Why `mcp-shield` Outperforms Alternative Tools
 
-* 🚫 **Destructive Command Interception:** Automatically flags and drops destructive shell and database actions (`rm -rf`, `mkfs`, `DROP TABLE`, `TRUNCATE`).
-* 🔒 **Sensitive Path Protection:** Prevents unauthorized reads of SSH keys (`id_rsa`), `.env` files, and AWS credentials.
-* 🎭 **Zero-Leak Secret Redactor:** Intercepts and masks API tokens (OpenAI, GitHub, AWS, JWTs, Bearer headers) before they reach model context.
-* 📊 **Live Terminal HUD:** Formats real-time tool execution latencies and security decisions directly to stderr without corrupting the JSON-RPC pipe.
-* 📝 **JSON-Lines Audit Trail:** Writes structured logs (`--log audit.jsonl`) for enterprise compliance and review.
+| Capability | Static Config Scanners | Standard Proxies | `mcp-shield` 🛡️ |
+| :--- | :---: | :---: | :---: |
+| **Real-time Runtime Blocking** | ❌ | ✅ | ✅ |
+| **1-Click Auto-Wrap CLI** | ❌ | ❌ | ✅ (`mcp-shield wrap`) |
+| **Reversible Secret Vault** | ❌ | ❌ (hard redacts, breaking APIs) | ✅ (masks outbound, re-hydrates inbound) |
+| **Destructive Command Guard** | ❌ | Partial | ✅ (`rm -rf`, `DROP TABLE`, `mkfs`) |
+| **Sensitive Path Shield** | ❌ | Partial | ✅ (`.env`, `id_rsa`, `~/.aws`) |
+| **Zero-Corrupt Terminal HUD** | ❌ | ❌ | ✅ (Live latency & status to stderr) |
 
 ---
 
-## 🛠️ CLI Reference
+## 🔒 The Reversible Secret Vault
+
+Standard redactors replace secrets with `[REDACTED]`, which breaks downstream APIs when the tool actually needs the token. 
+
+`mcp-shield` uses an in-memory cryptographic token vault:
+1. **Outbound to LLM:** Replaces raw API keys, JWTs, and passwords with synthetic placeholders (`[[MCP_SHIELD_REF_8f91]]`). The LLM never sees your real credentials.
+2. **Inbound from LLM:** When the LLM calls a downstream tool with the placeholder, `mcp-shield` securely re-hydrates the placeholder with the real secret before dispatching to the target service.
+
+---
+
+## 🛠️ Manual CLI Usage
+
+You can also run `mcp-shield` directly as a transparent wrapper:
 
 ```bash
-Usage: mcp-audit [options] <command> [args...]
+# Run any MCP server protected through mcp-shield
+npx mcp-shield -- npx -y @modelcontextprotocol/server-postgres "postgresql://localhost/mydb"
+
+# Enable persistent JSON audit logging
+npx mcp-shield --log /tmp/audit.jsonl -- npx -y @modelcontextprotocol/server-filesystem /path/to/dir
+```
+
+### Options
+
+```text
+Usage: mcp-shield [options] [command] [args...]
+
+Subcommands:
+  wrap [target]                Inject mcp-shield into Claude Desktop configuration
+  unwrap [target]              Restore original configuration
 
 Arguments:
   command                      Target MCP server command (e.g., 'npx', 'node', 'python')
   args                         Arguments to pass to target MCP server
 
 Options:
-  -V, --version                output the version number
   -l, --log <path>             File path to write JSON audit logs
-  -s, --silent                 Suppress live terminal audit logging to stderr (default: false)
-  --no-mask                    Disable automatic secret/credential redaction
+  -s, --silent                 Suppress live terminal HUD to stderr (default: false)
+  --no-mask                    Disable automatic secret vault tokenization
   -b, --block-tool <tools...>  Explicit list of tool names to block completely
   -h, --help                   Display help instructions
 ```
@@ -81,8 +89,8 @@ Options:
 ## 🧪 Testing
 
 ```bash
-git clone https://github.com/mcp-audit/mcp-audit.git
-cd mcp-audit
+git clone https://github.com/alexfraser-scotch/mcp-shield.git
+cd mcp-shield
 npm install
 npm test
 ```
@@ -91,4 +99,4 @@ npm test
 
 ## 🤝 Contributing & License
 
-Contributions, bug reports, and rule suggestions are welcome! Distributed under the [MIT License](LICENSE).
+Contributions, rules, and suggestions are welcome! Distributed under the [MIT License](LICENSE).

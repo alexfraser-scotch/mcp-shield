@@ -1,5 +1,5 @@
 import type { AuditDecision, JSONRPCRequest } from "../types.js";
-import { maskSecretsInObject } from "../utils/sanitizer.js";
+import { SecretVault } from "../utils/vault.js";
 
 const DANGEROUS_COMMANDS = [
   /\brm\s+(-rf?|-fr?)\b/i,
@@ -25,17 +25,18 @@ const SENSITIVE_PATHS = [
 
 export class SecurityEngine {
   private blockedTools: Set<string>;
-  private maskSecrets: boolean;
+  private vault: SecretVault;
+  private useVault: boolean;
 
   constructor(options?: { blockedTools?: string[]; maskSecrets?: boolean }) {
     this.blockedTools = new Set(options?.blockedTools ?? []);
-    this.maskSecrets = options?.maskSecrets ?? true;
+    this.useVault = options?.maskSecrets ?? true;
+    this.vault = new SecretVault();
   }
 
   public evaluateRequest(request: JSONRPCRequest): AuditDecision {
     const method = request.method;
 
-    // Check if this is an MCP tool invocation
     if (method === "tools/call") {
       const toolName = request.params?.name;
       const args = request.params?.arguments || {};
@@ -72,42 +73,36 @@ export class SecurityEngine {
         }
       }
 
-      // 4. Secret Masking in Tool Arguments
-      if (this.maskSecrets) {
-        const { maskedObj, count } = maskSecretsInObject(args);
-        if (count > 0) {
-          const modified = {
+      // 4. Inbound Re-hydration: If the LLM sent back a placeholder, re-hydrate with real secret for downstream tool
+      if (this.useVault) {
+        const rehydratedArgs = this.vault.detokenizeObject(args);
+        return {
+          action: "allow",
+          modifiedPayload: {
             ...request,
             params: {
               ...request.params,
-              arguments: maskedObj
+              arguments: rehydratedArgs
             }
-          };
-          return {
-            action: "mask",
-            ruleName: "secrets_redacted",
-            reason: `Masked ${count} sensitive credential(s) from arguments`,
-            modifiedPayload: modified
-          };
-        }
+          }
+        };
       }
     }
 
-    // Default Allow
     return { action: "allow" };
   }
 
   public evaluateResponse(response: any): AuditDecision {
-    if (this.maskSecrets && response?.result) {
-      const { maskedObj, count } = maskSecretsInObject(response.result);
+    if (this.useVault && response?.result) {
+      const { sanitizedObj, count } = this.vault.tokenizeObject(response.result);
       if (count > 0) {
         return {
           action: "mask",
-          ruleName: "response_secrets_redacted",
-          reason: `Masked ${count} credential(s) in response output`,
+          ruleName: "vault_tokenized_secrets",
+          reason: `Stored ${count} secret(s) in local vault and replaced with synthetic references`,
           modifiedPayload: {
             ...response,
-            result: maskedObj
+            result: sanitizedObj
           }
         };
       }
