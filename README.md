@@ -5,6 +5,17 @@
 
 > **Zero-overhead runtime security proxy, reversible secret vault, and audit firewall for [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers.**
 
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🛡️  mcp-shield runtime active: Cursor / Claude Desktop / Windsurf           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ➜ IN  [BLOCKED] execute_sql "DROP TABLE users;" (Destructive command)       │
+│ ➜ IN  [BLOCKED] read_file   "~/.ssh/id_rsa"     (Sensitive path protected)  │
+│ ✔ OUT [MASKED]  get_user_api "sk-proj-..." -> [[MCP_SHIELD_REF_8f91]]      │
+│ ➜ IN  [RESTORE] call_webhook [[MCP_SHIELD_REF_8f91]] -> Re-hydrated        │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
 When AI assistants (**Cursor**, **Claude Desktop**, **Windsurf**, or agent frameworks) connect to local MCP servers, they often receive unrestricted access to system files, shell commands, and databases. 
 
 Unlike offline scanners that only check configuration files once, **`mcp-shield`** runs in real time between your AI client and any target MCP server. It intercepts destructive tool calls, prevents sensitive file exfiltration, and redacts credentials before they can leak into external LLM prompts.
