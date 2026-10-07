@@ -26,7 +26,7 @@ export class StdioProxy {
     });
 
     this.childProcess.on("error", (err) => {
-      process.stderr.write(`[mcp-audit] Subprocess error: ${err.message}\n`);
+      process.stderr.write(`[mcp-shield] Subprocess error: ${err.message}\n`);
       process.exit(1);
     });
 
@@ -111,7 +111,7 @@ export class StdioProxy {
           id: reqId,
           error: {
             code: -32600, // Invalid Request / Security Policy Block
-            message: `[mcp-audit] BLOCKED by security policy: ${decision.reason}`
+            message: `[mcp-shield] BLOCKED by security policy: ${decision.reason}`
           }
         };
         process.stdout.write(JSON.stringify(errorResponse) + "\n");

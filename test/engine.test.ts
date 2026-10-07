@@ -89,4 +89,39 @@ describe("SecurityEngine", () => {
     expect(decision.action).toBe("block");
     expect(decision.ruleName).toBe("sensitive_path_access");
   });
+
+  it("blocks container pruning and kubernetes deletion commands", () => {
+    const dockerReq = {
+      jsonrpc: "2.0" as const,
+      id: 4,
+      method: "tools/call",
+      params: {
+        name: "terminal",
+        arguments: { command: "docker system prune -a --volumes" }
+      }
+    };
+    expect(engine.evaluateRequest(dockerReq).action).toBe("block");
+
+    const k8sReq = {
+      jsonrpc: "2.0" as const,
+      id: 5,
+      method: "tools/call",
+      params: {
+        name: "terminal",
+        arguments: { command: "kubectl delete all --all" }
+      }
+    };
+    expect(engine.evaluateRequest(k8sReq).action).toBe("block");
+
+    const gitReq = {
+      jsonrpc: "2.0" as const,
+      id: 6,
+      method: "tools/call",
+      params: {
+        name: "terminal",
+        arguments: { command: "git push origin main --force" }
+      }
+    };
+    expect(engine.evaluateRequest(gitReq).action).toBe("block");
+  });
 });

@@ -18,7 +18,7 @@ export class AuditLogger {
         fs.appendFileSync(this.logFilePath, JSON.stringify(entry) + "\n", "utf8");
       } catch (err) {
         if (!this.silent) {
-          process.stderr.write(`[mcp-audit] Failed to write to log file: ${(err as Error).message}\n`);
+          process.stderr.write(`[mcp-shield] Failed to write to log file: ${(err as Error).message}\n`);
         }
       }
     }

@@ -114,4 +114,6 @@ npm test
 
 ## 🤝 Contributing & License
 
-Contributions, rules, and suggestions are welcome! Distributed under the [MIT License](LICENSE).
+Contributions, rules, and security suggestions are warmly welcomed! See our [Contributing Guide](CONTRIBUTING.md) to get started.
+
+Distributed under the [MIT License](LICENSE).

@@ -10,7 +10,10 @@ const DANGEROUS_COMMANDS = [
   /\bchmod\s+(-R\s+)?777\b/i,
   /\bdrop\s+database\b/i,
   /\bdrop\s+table\b/i,
-  /\btruncate\s+table\b/i
+  /\btruncate\s+table\b/i,
+  /\bdocker\s+(system\s+prune|volume\s+prune|rm\s+-f)\b/i,
+  /\bkubectl\s+delete\s+(all|namespace|ns)\b/i,
+  /\bgit\s+push\s+.*(--force|-f)\b/i
 ];
 
 const SENSITIVE_PATHS = [
