@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" width="140" height="140" alt="mcp-shield logo" style="border-radius: 20px;" />
+</p>
+
 # mcp-shield 🛡️
 
 [![npm version](https://img.shields.io/npm/v/mcp-shield.svg)](https://www.npmjs.com/package/mcp-shield)
